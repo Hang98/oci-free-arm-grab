@@ -1,0 +1,26 @@
+name: keepalive
+
+# GitHub 会在仓库 60 天无提交后自动停用定时工作流，这里每月打一个空提交保活。
+on:
+  schedule:
+    - cron: "17 3 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 更新保活时间戳
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add .keepalive
+            git commit -m "keepalive $(date -u +%F)"
+            git push
+          fi

@@ -1,0 +1,46 @@
+name: OCI 免费 ARM 抢机
+
+on:
+  schedule:
+    # GitHub 的最小粒度是 5 分钟；实际触发可能有几分钟延迟，靠 concurrency 串起来持续跑
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oci-grab
+  cancel-in-progress: false
+
+jobs:
+  grab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装 OCI SDK
+        run: pip install --quiet oci
+
+      - name: 尝试创建免费 ARM 实例
+        env:
+          OCI_USER: ${{ secrets.OCI_USER }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_TENANCY: ${{ secrets.OCI_TENANCY }}
+          OCI_REGION: ${{ secrets.OCI_REGION }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+          OCI_COMPARTMENT_ID: ${{ secrets.OCI_COMPARTMENT_ID }}
+          OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
+          OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          GRAB_NAME: free-arm-1
+          GRAB_OCPUS: "1"
+          GRAB_MEM_GB: "6"
+          GRAB_BOOT_GB: "100"
+          GRAB_BUDGET_SECONDS: "500"
+          GRAB_INTERVAL: "45"
+        run: python grab.py
