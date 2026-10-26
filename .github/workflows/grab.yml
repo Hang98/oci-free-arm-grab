@@ -5,6 +5,15 @@ on:
     # GitHub 的最小粒度是 5 分钟；实际触发可能有几分钟延迟，靠 concurrency 串起来持续跑
     - cron: "*/5 * * * *"
   workflow_dispatch:
+    inputs:
+      budget_seconds:
+        description: "本次运行的时间预算（秒），默认 500；通宵跑可填 20400"
+        required: false
+        default: "500"
+      interval_seconds:
+        description: "两次尝试之间的间隔（秒），默认 90"
+        required: false
+        default: "90"
 
 permissions:
   contents: read
@@ -17,7 +26,7 @@ concurrency:
 jobs:
   grab:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -42,8 +51,8 @@ jobs:
           GRAB_OCPUS: "1"
           GRAB_MEM_GB: "6"
           GRAB_BOOT_GB: "100"
-          GRAB_BUDGET_SECONDS: "500"
-          GRAB_INTERVAL: "90"
+          GRAB_BUDGET_SECONDS: ${{ inputs.budget_seconds || '500' }}
+          GRAB_INTERVAL: ${{ inputs.interval_seconds || '90' }}
         run: python grab.py | tee result.txt
 
       - name: 抢到后开 issue 通知
