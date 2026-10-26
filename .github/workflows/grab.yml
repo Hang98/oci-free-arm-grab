@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: oci-grab
@@ -42,5 +43,16 @@ jobs:
           GRAB_MEM_GB: "6"
           GRAB_BOOT_GB: "100"
           GRAB_BUDGET_SECONDS: "500"
-          GRAB_INTERVAL: "45"
-        run: python grab.py
+          GRAB_INTERVAL: "90"
+        run: python grab.py | tee result.txt
+
+      - name: 抢到后开 issue 通知
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if grep -q "RESULT: CREATED" result.txt 2>/dev/null; then
+            gh issue create \
+              --title "🎉 已抢到免费 ARM 实例" \
+              --body "工作流 $(date -u +%FT%TZ) 抢到了实例：$(grep 'RESULT: CREATED' result.txt)" || true
+          fi

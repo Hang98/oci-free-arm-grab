@@ -163,8 +163,8 @@ def main() -> None:
             except oci.exceptions.ServiceError as e:
                 code, msg = e.code or "", (e.message or "")
                 if code == "TooManyRequests":
-                    log("  → 被限流(429)，等 90s 再试")
-                    time.sleep(90)
+                    log("  → 被限流(429)，等 60s 再试")
+                    time.sleep(60)
                 elif "Out of host capacity" in msg or code in RETRYABLE_CODES:
                     if code == "LimitExceeded":
                         log(f"  ⚠️ {code}: {msg[:160]}（免费额度已满，停止）")
