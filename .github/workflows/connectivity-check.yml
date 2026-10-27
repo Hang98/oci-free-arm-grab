@@ -1,0 +1,24 @@
+name: connectivity-check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: TCP 443 可达性
+        run: |
+          set -x
+          if timeout 10 bash -c 'cat < /dev/null > /dev/tcp/138.3.221.111/443'; then
+            echo "TCP443_OK"
+          else
+            echo "TCP443_FAIL"
+          fi
+      - name: TLS 握手探测
+        run: |
+          curl -k -sS --max-time 10 -o /dev/null -w "http_code=%{http_code}\n" https://138.3.221.111/ || true
+          echo "--- 带 SNI 探测 ---"
+          curl -k -sS --max-time 10 --resolve www.microsoft.com:443:138.3.221.111 -o /dev/null \
+            -w "http_code=%{http_code}\n" https://www.microsoft.com/ || true

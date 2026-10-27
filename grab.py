@@ -46,7 +46,8 @@ BOOT_GB = int(env("GRAB_BOOT_GB", "100"))
 BUDGET = int(env("GRAB_BUDGET_SECONDS", "530"))
 INTERVAL = int(env("GRAB_INTERVAL", "45"))
 
-SHAPE = "VM.Standard.A1.Flex"
+SHAPE = env("GRAB_SHAPE", "VM.Standard.A1.Flex")
+IS_FLEX = "Flex" in SHAPE
 RETRYABLE_CODES = {"InternalError", "LimitExceeded", "TooManyRequests", "ServiceUnavailable"}
 
 
@@ -138,12 +139,10 @@ def main() -> None:
             if time.time() >= deadline:
                 break
             log(f"第 {attempt} 轮 · 在 {ad} 尝试创建 …")
-            details = oci.core.models.LaunchInstanceDetails(
+            launch_kw = dict(
                 availability_domain=ad,
                 compartment_id=COMPARTMENT,
                 shape=SHAPE,
-                shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
-                    ocpus=OCPUS, memory_in_gbs=MEM_GB),
                 source_details=oci.core.models.InstanceSourceViaImageDetails(
                     image_id=image_id, boot_volume_size_in_gbs=BOOT_GB),
                 create_vnic_details=oci.core.models.CreateVnicDetails(
@@ -151,6 +150,11 @@ def main() -> None:
                 display_name=NAME,
                 metadata={"ssh_authorized_keys": SSH_PUB.strip()},
             )
+            if IS_FLEX:
+                # 只有 Flex 规格（A1.Flex）才允许自定义核数/内存；E2.1.Micro 是固定规格
+                launch_kw["shape_config"] = oci.core.models.LaunchInstanceShapeConfigDetails(
+                    ocpus=OCPUS, memory_in_gbs=MEM_GB)
+            details = oci.core.models.LaunchInstanceDetails(**launch_kw)
             try:
                 resp = compute.launch_instance(details)
                 inst = resp.data
