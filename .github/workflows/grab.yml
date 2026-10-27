@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       budget_seconds:
-        description: "本次运行的时间预算（秒），默认 500；通宵跑可填 20400"
+        description: "本次运行的时间预算（秒），默认 20400（约 5 小时 40 分）"
         required: false
-        default: "500"
+        default: "20400"
       interval_seconds:
         description: "两次尝试之间的间隔（秒），默认 90"
         required: false
@@ -51,7 +51,7 @@ jobs:
           GRAB_OCPUS: "1"
           GRAB_MEM_GB: "6"
           GRAB_BOOT_GB: "100"
-          GRAB_BUDGET_SECONDS: ${{ inputs.budget_seconds || '500' }}
+          GRAB_BUDGET_SECONDS: ${{ inputs.budget_seconds || '20400' }}
           GRAB_INTERVAL: ${{ inputs.interval_seconds || '90' }}
         run: python grab.py | tee result.txt
 
